@@ -2,6 +2,8 @@ import sqlite3
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
+from threading import Thread
+from flask import Flask
 from telegram import Update, KeyboardButton, ReplyKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler
 
@@ -10,6 +12,20 @@ ADMIN_ID = 6127276408
 
 LOGIN, PASSWORD = range(2)
 BASE_URL = "https://rmk.stavedu.ru:8010"
+
+# Flask приложение для Render
+flask_app = Flask(__name__)
+
+@flask_app.route('/')
+def index():
+    return "RMK Student Bot is running!"
+
+@flask_app.route('/health')
+def health():
+    return "OK"
+
+def run_flask():
+    flask_app.run(host='0.0.0.0', port=10000)
 
 def init_db():
     conn = sqlite3.connect('rmk_student.db')
@@ -165,7 +181,10 @@ def cancel(update, context):
 
 if __name__ == "__main__":
     init_db()
-    from telegram.ext import Updater, CommandHandler, ConversationHandler
+    
+    # Запускаем Flask в отдельном потоке
+    Thread(target=run_flask).start()
+    
     updater = Updater(token=BOT_TOKEN)
     dp = updater.dispatcher
     conv = ConversationHandler(
